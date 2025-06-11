@@ -13,5 +13,27 @@ This project solves inventory inefficiencies using SQL and Power BI. It includes
 - `README.md` → this file
 
 ---
+## How to Run the Project Locally (SQLite CLI)
 
-Let me know if you want a sample `README.md`, zipped folder, or automatic push with GitHub CLI!
+### 1. Install SQLite (if not already)
+
+- Windows: Download from [https://www.sqlite.org/download.html](https://www.sqlite.org/download.html)
+- Mac/Linux: use `brew install sqlite3` or `sudo apt install sqlite3`
+
+To verify:
+```bash
+sqlite3 --version
+```
+### 2. Open SQLite and Create DB
+cd path\to\inventory-analytics
+sqlite3 inventory.db
+
+### 3. Create Tables and Load Data
+.read sql/schema.sql
+.mode csv
+.headers on
+.import data/inventory_forecasting.csv stg_inventory_raw
+.read sql/insert_clean.sql
+
+### 4. Run a Test Query
+SELECT * FROM fact_inventory LIMIT 10;
