@@ -25,15 +25,19 @@ To verify:
 sqlite3 --version
 ```
 ### 2. Open SQLite and Create DB
-cd path\to\inventory-analytics
+```bash
+cd path\to\inventory-forecasting
 sqlite3 inventory.db
-
+```
 ### 3. Create Tables and Load Data
+```bash
 .read sql/schema.sql
 .mode csv
 .headers on
 .import data/inventory_forecasting.csv stg_inventory_raw
 .read sql/insert_clean.sql
-
+```
 ### 4. Run a Test Query
+```bash
 SELECT * FROM fact_inventory LIMIT 10;
+```
