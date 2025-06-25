@@ -5,6 +5,7 @@
 
 - [SQLite3](https://www.sqlite.org/download.html) (for database and SQL queries)
 - [Power BI Desktop](https://powerbi.microsoft.com/desktop/) (for dashboarding; Windows only)
+- [Download the Dataset](https://drive.google.com/drive/folders/1434xs93SKLoZkxaRzhoxhIA_sUKT-jMY)
 - (Optional) [Python 3.x](https://www.python.org/downloads/) with `pandas` and `jupyter` for EDA
 
 ### 1. Clone the Repository
