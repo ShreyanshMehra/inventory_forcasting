@@ -1,59 +1,38 @@
--- =========================
--- 1. LOAD DATA FROM CSV INTO STAGING TABLE
--- =========================
--- In SQLite CLI, run:
--- .mode csv
--- .import data/inventory_forecasting.csv stg_inventory_raw
-
--- =========================
--- 2. DATA CLEANING & INSERTION
--- =========================
-
--- Remove invalid rows (negative inventory or units sold, or nulls)
+-- Remove invalid rows
 DELETE FROM stg_inventory_raw
 WHERE "Inventory Level" IS NULL
    OR "Units Sold" IS NULL
    OR "Inventory Level" < 0
    OR "Units Sold" < 0;
 
--- Populate dimension tables
+-- Insert into dim_store
+INSERT OR IGNORE INTO dim_store (store_id, region)
+SELECT DISTINCT "Store ID", Region FROM stg_inventory_raw WHERE "Store ID" IS NOT NULL;
 
+-- Insert into dim_product
+INSERT OR IGNORE INTO dim_product (product_id, category)
+SELECT DISTINCT "Product ID", Category FROM stg_inventory_raw WHERE "Product ID" IS NOT NULL;
+
+-- Insert into dim_weather
+INSERT OR IGNORE INTO dim_weather (weather_condition)
+SELECT DISTINCT "Weather Condition" FROM stg_inventory_raw WHERE "Weather Condition" IS NOT NULL;
+
+-- Insert into dim_promo
+INSERT OR IGNORE INTO dim_promo (holiday_promotion, seasonality)
+SELECT DISTINCT "Holiday/Promotion", Seasonality FROM stg_inventory_raw WHERE Seasonality IS NOT NULL;
+
+-- Insert into dim_date
 INSERT OR IGNORE INTO dim_date (date, year, month, day, week, quarter)
 SELECT DISTINCT
-    date,
-    CAST(strftime('%Y', date) AS INTEGER),
-    CAST(strftime('%m', date) AS INTEGER),
-    CAST(strftime('%d', date) AS INTEGER),
-    CAST(strftime('%W', date) AS INTEGER),
-    CAST((strftime('%m', date) - 1) / 3 + 1 AS INTEGER)
-FROM stg_inventory_raw
-WHERE date IS NOT NULL;
+    Date,
+    CAST(strftime('%Y', Date) AS INTEGER),
+    CAST(strftime('%m', Date) AS INTEGER),
+    CAST(strftime('%d', Date) AS INTEGER),
+    CAST(strftime('%W', Date) AS INTEGER),
+    CAST((strftime('%m', Date) - 1) / 3 + 1 AS INTEGER)
+FROM stg_inventory_raw WHERE Date IS NOT NULL;
 
-
-INSERT OR IGNORE INTO dim_store (store_id, region)
-SELECT DISTINCT store_id, region
-FROM stg_inventory_raw
-WHERE store_id IS NOT NULL;
-
-
-INSERT OR IGNORE INTO dim_product (product_id, category)
-SELECT DISTINCT product_id, category
-FROM stg_inventory_raw
-WHERE product_id IS NOT NULL;
-
-
-INSERT OR IGNORE INTO dim_weather (weather_condition)
-SELECT DISTINCT weather_condition
-FROM stg_inventory_raw
-WHERE weather_condition IS NOT NULL;
-
-
-INSERT OR IGNORE INTO dim_promo (holiday_promotion, seasonality)
-SELECT DISTINCT holiday_promotion, seasonality
-FROM stg_inventory_raw
-WHERE seasonality IS NOT NULL;
-
--- Insert into fact table with foreign key mapping
+-- Insert into fact_inventory
 INSERT INTO fact_inventory (
     date_id, store_id, product_id, weather_id, promo_id,
     inventory_level, units_sold, units_ordered, demand_forecast,
@@ -65,17 +44,16 @@ SELECT
     p.product_id,
     w.weather_id,
     pr.promo_id,
-    r.inventory_level,
-    r.units_sold,
-    r.units_ordered,
-    r.demand_forecast,
-    r.price,
-    r.discount,
-    r.competitor_pricing
+    r."Inventory Level",
+    r."Units Sold",
+    r."Units Ordered",
+    r."Demand Forecast",
+    r.Price,
+    r.Discount,
+    r."Competitor Pricing"
 FROM stg_inventory_raw r
-JOIN dim_date d ON r.date = d.date
-JOIN dim_store s ON r.store_id = s.store_id
-JOIN dim_product p ON r.product_id = p.product_id
-JOIN dim_weather w ON r.weather_condition = w.weather_condition
-JOIN dim_promo pr ON r.holiday_promotion = pr.holiday_promotion
-                  AND r.seasonality = pr.seasonality;
+JOIN dim_date d ON r.Date = d.date
+JOIN dim_store s ON r."Store ID" = s.store_id
+JOIN dim_product p ON r."Product ID" = p.product_id
+JOIN dim_weather w ON r."Weather Condition" = w.weather_condition
+JOIN dim_promo pr ON r."Holiday/Promotion" = pr.holiday_promotion AND r.Seasonality = pr.seasonality;
